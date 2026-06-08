@@ -139,7 +139,6 @@
                 for (let j = 0; j < cols.length; j++) row.push(cols[j].innerText.replace(/,/g, ""));
                 csv.push(row.join(","));
             }
-            // ✅ FIX 9: Corrected CSV newline string format
             let blob = new Blob([csv.join("\n")], {type: "text/csv"});
             let a = document.createElement("a");
             a.href = window.URL.createObjectURL(blob);
@@ -152,7 +151,6 @@
             updateUI();
         }
 
-        // ✅ FIX 8: Live DOM manipulation using Fetch API
         function updateUI() {
             fetch(`/api/state?page=${currentPage}`)
                 .then(res => res.json())
