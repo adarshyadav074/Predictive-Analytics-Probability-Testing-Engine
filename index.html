@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predictive Analytics Dashboard</title>
+    <style>
+        body { background-color: #0d0d0d; color: #ffffff; font-family: 'Courier New', Courier, monospace; text-align: center; margin-top: 30px; }
+        .container { border: 2px solid #00ffcc; padding: 20px; width: 85%; margin: auto; box-shadow: 0 0 20px #00ffcc; border-radius: 10px; background: #1a1a1a; margin-bottom: 50px; position: relative; overflow: hidden; }
+        .hacker-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; opacity: 0.12; color: #0f0; font-size: 13px; text-align: left; padding: 15px; box-sizing: border-box; pointer-events: none; white-space: pre-wrap; word-wrap: break-word; overflow: hidden; text-shadow: 0 0 5px #0f0; }
+        .content-wrapper { position: relative; z-index: 10; }
+        h1 { color: #00ffcc; letter-spacing: 2px; text-shadow: 0 0 10px #00ffcc;}
+        .floating-btns { position: fixed; top: 20px; right: 20px; z-index: 999; display: flex; gap: 15px;}
+        .info-btn { background: #ffeb3b; color: #000; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 24px; font-weight: bold; cursor: pointer; box-shadow: 0 0 15px #ffeb3b;}
+        .csv-btn { background: #34d399; color: #000; border: none; border-radius: 8px; padding: 0 15px; font-size: 14px; font-weight: bold; cursor: pointer; box-shadow: 0 0 15px #34d399; font-family: sans-serif;}
+        .modal-overlay { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px); }
+        .modal-content { background-color: #111; margin: 5% auto; padding: 30px; border: 2px solid #f44336; border-radius: 12px; width: 85%; max-width: 650px; color: #fff; text-align: left; font-family: sans-serif;}
+        .modal-header { font-size: 24px; font-weight: 900; margin-bottom: 20px; text-align: center; border-bottom: 1px solid #333; padding-bottom: 15px;}
+        .modal-body { font-size: 16px; line-height: 1.7; color: #ddd; }
+        .close-btn { color: white; border: none; padding: 15px 20px; font-weight: bold; border-radius: 8px; cursor: pointer; display: block; margin: 25px auto 0; width: 100%;}
+        .trend-badge { background-color: #111; color: #fff; padding: 5px 15px; border-radius: 8px; font-size: 18px; border: 1px dashed #555; display: inline-block; margin-bottom: 15px; letter-spacing: 5px;}
+        .ai-badge { background-color: #222; color: #00ffcc; padding: 8px 20px; border-radius: 20px; font-size: 16px; border: 1px solid #00ffcc; display: inline-block; margin-bottom: 15px; font-weight: bold;}
+        .streak-badge { background-color: #222; color: #ff9800; padding: 8px 20px; border-radius: 20px; font-size: 16px; border: 1px dashed #ff9800; display: inline-block; margin-bottom: 15px;}
+        .session-badge { background-color: #111; color: #34d399; padding: 8px 20px; border-radius: 20px; font-size: 16px; border: 1px solid #34d399; display: inline-block; margin-bottom: 15px;}
+        .win-txt { color: #4caf50; } .highlight-session { color: #34d399;}
+        .current-prediction { background: rgba(0, 255, 204, 0.1); border: 1px dashed #00ffcc; padding: 20px; border-radius: 8px; margin: 10px 0; }
+        .current-prediction h2 { margin: 10px 0; font-size: 24px; }
+        .highlight { color: #00ffcc; font-weight: bold; font-size: 28px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 25px; }
+        th, td { border: 1px solid #333; padding: 12px; text-align: center; font-size: 16px; }
+        th { background-color: #00ffcc; color: #000; font-weight: bold; }
+        tr:nth-child(even) { background-color: rgba(17, 17, 17, 0.85); } tr:nth-child(odd) { background-color: rgba(34, 34, 34, 0.85); }
+        .pagination { margin-top: 25px; display: flex; justify-content: center; align-items: center; gap: 20px; }
+        .pagination a { background: #00ffcc; color: #000; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; box-shadow: 0 0 10px #00ffcc; font-family: sans-serif;}
+        .pagination a:hover { background: #fff; box-shadow: 0 0 15px #fff; }
+        .pagination span { font-size: 18px; font-weight: bold; color: #fff; }
+    </style>
+</head>
+<body>
+    
+    <div class="floating-btns">
+        <button class="csv-btn" onclick="downloadCSV()">📥 Export Data</button>
+        <button class="info-btn" onclick="openModal()">i</button>
+    </div>
+
+    <div id="lossWarningModal" class="modal-overlay" style="z-index: 10000;">
+        <div class="modal-content" style="border-color: #ff0000; box-shadow: 0 0 25px #ff0000;">
+            <div class="modal-header" style="color: #ff0000; font-size: 28px;">🚨 CRITICAL DANGER ALERT 🚨</div>
+            <div class="modal-body" style="text-align: center;">
+                <p style="font-size: 20px; font-weight: bold; color: #ff5555;">AI 5 Baar Lagataar Loss Kar Chuka Hai!</p>
+                <p style="font-size: 18px;">According to our data, agar AI 5 times non-stop loss karta hai, toh iska matlab <strong>market trend bohot kharab chal raha hai</strong> aur pure RNG death spiral shuru ho chuka hai.</p>
+                <p style="color: #ffeb3b; font-size: 18px; margin-top: 15px;">Kripya apna capital safe rakhein aur abhi trade STOP kar dein jab tak trend normal nahi hota!</p>
+                <button class="close-btn" style="background-color: #ff0000; color: #fff; border: 2px solid #fff; font-size: 18px; margin-top: 30px;" onclick="closeLossWarning()">I UNDERSTAND (STOP PLAYING)</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="disclaimerModal" class="modal-overlay">
+        <div class="modal-content" style="border-color: #f44336;">
+            <div class="modal-header" style="color: #f44336;">⚠️ IMPORTANT DISCLAIMER ⚠️</div>
+            <div class="modal-body">
+                <p>This "AI Hack Engine" is an experimental project built using Machine Learning algorithms strictly for <strong>educational and awareness purposes</strong>.</p>
+                <p style="color: #f44336; font-weight: bold;">WE DO NOT PROMOTE GAMBLING OR HACKING.</p>
+                <p>The core objective is to demonstrate that even highly advanced ML models <strong>CANNOT perfectly predict</strong> server-side probability games. Beware of fake hack sellers online.</p>
+                <p><strong>PLAY AT YOUR OWN RISK.</strong> The developer assumes NO responsibility for any financial losses.</p>
+                <button class="close-btn" style="background-color: #f44336;" onclick="closeDisclaimer()">I UNDERSTAND & AGREE</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="hacker-bg" class="hacker-bg"></div>
+        
+        <div class="content-wrapper">
+            <h1>🤖 PREDICTIVE ANALYTICS ENGINE 🤖</h1>
+            
+            <div class="trend-badge">SEQUENCE TREND: <span id="trend-text">Loading...</span></div><br>
+            
+            <div>
+                <div class="ai-badge" id="ai-status-text">Initializing...</div>
+                <div class="streak-badge">🔥 Peak Continuous Accuracy: <span class="win-txt" id="max-win-streak-text">0</span></div><br>
+                <div class="session-badge">🌍 Global Accuracy Rate: <span class="win-txt" id="win-rate-text">0.0%</span> | ⚡ Active Session Rate: <span class="highlight-session" id="current-win-rate-text">0.0%</span></div>
+            </div>
+            
+            <div class="current-prediction">
+                <h2>ISSUE ID : <span class="highlight" id="next-issue-text">Loading...</span></h2>
+                <h2>FORECAST : <span class="highlight" id="prediction-text">Wait...</span></h2>
+                <h2>DATA POINTS : <span class="highlight" id="sure-numbers-text">Wait...</span></h2>
+                <h2>CONFIDENCE METRIC : <span class="highlight" id="confidence-text">50.0%</span></h2>
+            </div>
+            
+            <table id="dataTable">
+                <thead>
+                    <tr><th>Issue ID</th><th>System Forecast</th><th>Actual Resolution</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td colspan="3" style="color:#888;">Synchronizing Database... Awaiting server payload.</td></tr>
+                </tbody>
+            </table>
+
+            <div class="pagination" id="pagination-controls">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        var disclaimerModal = document.getElementById("disclaimerModal");
+        var lossWarningModal = document.getElementById("lossWarningModal");
+
+        window.onload = function() {
+            if (!sessionStorage.getItem("disclaimerAcknowledged")) {
+                disclaimerModal.style.display = "block";
+            }
+            updateUI();
+        }
+
+        function closeLossWarning() { lossWarningModal.style.display = "none"; }
+        function openModal() { disclaimerModal.style.display = "block"; sessionStorage.removeItem("disclaimerAcknowledged"); }
+        function closeDisclaimer() { disclaimerModal.style.display = "none"; sessionStorage.setItem("disclaimerAcknowledged", "true"); initAudio(); }
+
+        let audioCtx;
+        function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        function playBeep() {
+            if(audioCtx && audioCtx.state === 'running') {
+                const osc = audioCtx.createOscillator();
+                osc.type = 'square'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                osc.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            }
+        }
+
+        function downloadCSV() {
+            let table = document.getElementById("dataTable");
+            let rows = table.querySelectorAll("tr");
+            let csv = [];
+            for (let i = 0; i < rows.length; i++) {
+                let row = [], cols = rows[i].querySelectorAll("td, th");
+                for (let j = 0; j < cols.length; j++) row.push(cols[j].innerText.replace(/,/g, ""));
+                csv.push(row.join(","));
+            }
+            // ✅ FIX 9: Corrected CSV newline string format
+            let blob = new Blob([csv.join("\n")], {type: "text/csv"});
+            let a = document.createElement("a");
+            a.href = window.URL.createObjectURL(blob);
+            a.download = "Predictive_Model_Data.csv";
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
+
+        function changePage(delta) {
+            currentPage += delta;
+            updateUI();
+        }
+
+        // ✅ FIX 8: Live DOM manipulation using Fetch API
+        function updateUI() {
+            fetch(`/api/state?page=${currentPage}`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById("trend-text").innerText = data.trend;
+                    document.getElementById("ai-status-text").innerText = data.ai_status;
+                    document.getElementById("max-win-streak-text").innerText = data.max_win_streak;
+                    document.getElementById("win-rate-text").innerText = data.win_rate + "%";
+                    document.getElementById("current-win-rate-text").innerText = data.current_win_rate + "%";
+                    document.getElementById("next-issue-text").innerText = data.next_issue;
+                    document.getElementById("prediction-text").innerText = data.prediction;
+                    document.getElementById("sure-numbers-text").innerText = data.sure_numbers;
+                    document.getElementById("confidence-text").innerText = data.confidence;
+
+                    const lastSeen = sessionStorage.getItem("lastSeenIssue");
+                    if (lastSeen && lastSeen !== data.next_issue) { playBeep(); }
+                    sessionStorage.setItem("lastSeenIssue", data.next_issue);
+
+                    if (data.current_loss_streak >= 5) {
+                        if (!sessionStorage.getItem("lossWarningActive")) {
+                            lossWarningModal.style.display = "block";
+                            sessionStorage.setItem("lossWarningActive", "true");
+                        }
+                    } else {
+                        sessionStorage.removeItem("lossWarningActive");
+                    }
+
+                    const tbody = document.querySelector("#dataTable tbody");
+                    tbody.innerHTML = "";
+                    if (data.paginated_history.length > 0) {
+                        data.paginated_history.forEach(row => {
+                            const tr = document.createElement("tr");
+                            tr.innerHTML = `<td>${row.issue}</td><td>${row.prediction_text}</td><td style="color: ${row.color}; font-weight: bold;">${row.result_text}</td>`;
+                            tbody.appendChild(tr);
+                        });
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="3" style="color:#888;">Synchronizing Database... Awaiting server payload.</td></tr>`;
+                    }
+
+                    const paginationDiv = document.getElementById("pagination-controls");
+                    let pagHTML = "";
+                    if (data.current_page > 1) {
+                        pagHTML += `<a href="#" onclick="changePage(-1); return false;">⬅️ Prev</a> `;
+                    }
+                    pagHTML += `<span>Page ${data.current_page} of ${data.total_pages}</span>`;
+                    if (data.current_page < data.total_pages) {
+                        pagHTML += ` <a href="#" onclick="changePage(1); return false;">Next ➡️</a>`;
+                    }
+                    paginationDiv.innerHTML = pagHTML;
+                })
+                .catch(err => console.error("API Fetch Error:", err));
+        }
+
+        setInterval(updateUI, 3000);
+
+        const bgBox = document.getElementById("hacker-bg");
+        const commands = [
+            "Initializing SGD Classifier environment...",
+            "Connecting to local SQLite database...",
+            "Synchronizing historical vectors...",
+            "Calculating sliding window probabilities...",
+            "Adjusting log-loss weights...",
+            "Fetching real-time API payload...",
+            "Evaluating variance thresholds...",
+            "Updating user interface DOM..."
+        ];
+        
+        let termLines = [];
+        if(sessionStorage.getItem("bgLogs")) { termLines = JSON.parse(sessionStorage.getItem("bgLogs")); }
+
+        function updateTerminalBg() {
+            let rand = Math.random();
+            let newLine = "";
+            if (rand < 0.35) newLine = commands[Math.floor(Math.random() * commands.length)];
+            else newLine = "Data sync check: [████████░░] " + Math.floor(Math.random() * 100) + "%";
+
+            termLines.push(newLine);
+            if (termLines.length > 35) termLines.shift();
+            
+            bgBox.innerText = termLines.join("\\n");
+            sessionStorage.setItem("bgLogs", JSON.stringify(termLines));
+            setTimeout(updateTerminalBg, Math.random() * 300 + 100); 
+        }
+        updateTerminalBg();
+    </script>
+</body>
+</html>
