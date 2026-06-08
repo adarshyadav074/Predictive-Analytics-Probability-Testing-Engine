@@ -308,7 +308,6 @@ def run_background_worker():
 
             time.sleep(2)
         except Exception as e:
-            # ✅ FIX 6: Exponential Backoff Applied
             print(f"[WARNING] Worker API Error: {e}")
             time.sleep(retry_delay)
             retry_delay = min(60, retry_delay * 2)
