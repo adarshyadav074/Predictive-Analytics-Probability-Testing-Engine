@@ -15,7 +15,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "default-dev-secret-key-change-in-prod")
 
 # ==========================================
-# 🛑 USER CONFIGURATION 🛑
+# USER CONFIGURATION
 # ==========================================
 DB_FILE = "local_game_history.db"
 API_URL = os.environ.get("API_URL", "https://draw.ar-lottery01.com/WinGo/WinGo_1M/GetHistoryIssuePage.json")
